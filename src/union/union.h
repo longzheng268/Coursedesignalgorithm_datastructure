@@ -13,7 +13,7 @@ extern GtkWidget *text_view_output;
 // 函数声明
 void perform_set_union(GtkWidget *widget, gpointer data);
 void perform_set_intersection(GtkWidget *widget, gpointer data);
-void perform_set_difference(GtkWidget *widget, gpointer data);
+void perform_set_difference_both(GtkWidget *widget, gpointer data);
 GtkWidget* create_union_page(void);
 
 #endif

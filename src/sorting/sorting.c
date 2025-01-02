@@ -3,9 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
+#define _GNU_SOURCE
 
 static GtkWidget *text_view_input;
 static GtkWidget *text_view_output;
+
+// 函数声明
+static int compare_ints(const void* a, const void* b);
+static char* array_to_string(const int arr[], int size);
+
+// 比较函数用于qsort
+static int compare_ints(const void* a, const void* b) {
+    return (*(int*)a - *(int*)b);
+}
 
 // 从A构造D
 void construct_D_from_A(const int* A, int N, int* D, int* D_size) {
@@ -14,59 +25,80 @@ void construct_D_from_A(const int* A, int N, int* D, int* D_size) {
         return;
     }
 
-    if (N > 100) {  // 假设最大允许100个元素
+    // 检查A[0]是否为0
+    if (A[0] != 0) {
+        handle_error(NULL, ERROR_INVALID_INPUT, "A序列的第一个数必须为0");
+        return;
+    }
+
+    if (N > MAX_ARRAY_SIZE) {
         handle_error(NULL, ERROR_BUFFER_OVERFLOW, "输入数组过大");
         return;
     }
 
+    // 计算D序列的大小
+    int expected_size = (N * (N - 1)) / 2;
+    if (expected_size > MAX_ARRAY_SIZE) {
+        handle_error(NULL, ERROR_BUFFER_OVERFLOW, "结果数组将超出最大限制");
+        return;
+    }
+
     int k = 0;
-    for (int i = 1; i < N; i++) {
-        for (int j = 0; j < i; j++) {
+    for (int i = 1; i < N && k < MAX_ARRAY_SIZE; i++) {
+        for (int j = 0; j < i && k < MAX_ARRAY_SIZE; j++) {
             D[k++] = A[i] - A[j];
         }
     }
     *D_size = k;
-    sort_array(D, k);
-}
 
-// 排序数组
-void sort_array(int* arr, int size) {
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (arr[j] > arr[j + 1]) {
-                int temp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = temp;
-            }
-        }
-    }
+    // 使用快速排序
+    sort_array(D, k);
 }
 
 // 从D构造A
 void construct_A_from_D(const int* D, int D_size, int* A, int* A_size) {
+    if (!D || !A || !A_size || D_size <= 0) {
+        handle_error(NULL, ERROR_INVALID_INPUT, "无效的输入参数");
+        return;
+    }
+
+    if (D_size > MAX_ARRAY_SIZE) {
+        handle_error(NULL, ERROR_BUFFER_OVERFLOW, "输入数组过大");
+        return;
+    }
+
+    // 创建查找表
+    int min_val = D[0], max_val = D[0];
+    for (int i = 1; i < D_size; i++) {
+        if (D[i] < min_val) min_val = D[i];
+        if (D[i] > max_val) max_val = D[i];
+    }
+
+    int range = max_val - min_val + 1;
+    char* exists = calloc(range, sizeof(char));
+    if (!exists) {
+        handle_error(NULL, ERROR_MEMORY_ALLOCATION, "内存分配失败");
+        return;
+    }
+
+    // 标记所有存在的差值
+    for (int i = 0; i < D_size; i++) {
+        exists[D[i] - min_val] = 1;
+    }
+
     // A[0] = 0
     A[0] = 0;
     *A_size = 1;
     
     // 从D中选择合适的数构造A
-    for (int i = 0; i < D_size && *A_size < 100; i++) {
+    for (int i = 0; i < D_size && *A_size < MAX_ARRAY_SIZE; i++) {
         int candidate = D[i];
         int valid = 1;
         
         // 检查是否可以将candidate添加到A中
-        for (int j = 0; j < *A_size; j++) {
+        for (int j = 0; j < *A_size && valid; j++) {
             int diff = abs(candidate - A[j]);
-            int found = 0;
-            
-            // 检查差值是否在D中
-            for (int k = 0; k < D_size; k++) {
-                if (D[k] == diff) {
-                    found = 1;
-                    break;
-                }
-            }
-            
-            if (!found) {
+            if (diff < range && !exists[diff - min_val]) {
                 valid = 0;
                 break;
             }
@@ -75,13 +107,24 @@ void construct_A_from_D(const int* D, int D_size, int* A, int* A_size) {
         if (valid) {
             A[*A_size] = candidate;
             (*A_size)++;
+            
+            if (*A_size >= MAX_ARRAY_SIZE) {
+                break;
+            }
         }
+    }
+
+    free(exists);
+
+    // 检查是否成功构造了A序列
+    if (*A_size == 1) {
+        handle_error(NULL, ERROR_INVALID_INPUT, "无法构造有效的A序列：输入的D序列不是有效的差分序列");
     }
 }
 
 // 重命名函数并确保它是静态的
 static int parse_array_numbers(const char* input, int* numbers, int* count) {
-    char* input_copy = strdup(input);
+    char* input_copy = g_strdup(input);
     char* token = strtok(input_copy, " ,\n");
     *count = 0;
     
@@ -104,6 +147,8 @@ static int parse_array_numbers(const char* input, int* numbers, int* count) {
 
 // 构造D的回调函数
 static void on_construct_D_clicked(GtkWidget *widget, gpointer data) {
+    (void)data;
+    
     ErrorContext error_ctx;
     init_error_context(&error_ctx);
     
@@ -122,8 +167,8 @@ static void on_construct_D_clicked(GtkWidget *widget, gpointer data) {
         gtk_text_buffer_get_bounds(buffer, &start, &end);
         input_text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
         
-        if (!input_text) {
-            THROW(&error_ctx, ERROR_MEMORY_ALLOCATION, "无法获取输入文本");
+        if (!input_text || strlen(input_text) == 0) {
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "请输入要处理的数列");
         }
         
         numbers = malloc(MAX_NUMBERS * sizeof(int));
@@ -135,14 +180,24 @@ static void on_construct_D_clicked(GtkWidget *widget, gpointer data) {
         
         int count;
         if (!parse_array_numbers(input_text, numbers, &count)) {
-            THROW(&error_ctx, ERROR_INVALID_INPUT, "无效的输入格式");
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "无效的输入格式 - 请输入用空格或逗号分隔的数字");
         }
         
-        // 构造D序列
-        construct_D_sequence(numbers, count, result);
+        if (count < 2) {
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "请至少输入两个数字");
+        }
+        
+        // 检查第一个数是否为0
+        if (numbers[0] != 0) {
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "A序列的第一个数必须为0");
+        }
+        
+        // 计算D序列
+        int D_size;
+        construct_D_from_A(numbers, count, result, &D_size);
         
         // 显示结果
-        result_str = array_to_string(result, count);
+        result_str = array_to_string(result, D_size);
         if (!result_str) {
             THROW(&error_ctx, ERROR_MEMORY_ALLOCATION, "无法生成结果字符串");
         }
@@ -163,6 +218,8 @@ static void on_construct_D_clicked(GtkWidget *widget, gpointer data) {
 
 // 构造A的回调函数
 static void on_construct_A_clicked(GtkWidget *widget, gpointer data) {
+    (void)data;
+    
     ErrorContext error_ctx;
     init_error_context(&error_ctx);
     
@@ -181,8 +238,8 @@ static void on_construct_A_clicked(GtkWidget *widget, gpointer data) {
         gtk_text_buffer_get_bounds(buffer, &start, &end);
         input_text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
         
-        if (!input_text) {
-            THROW(&error_ctx, ERROR_MEMORY_ALLOCATION, "无法获取输入文本");
+        if (!input_text || strlen(input_text) == 0) {
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "请输入要处理的数列");
         }
         
         numbers = malloc(MAX_NUMBERS * sizeof(int));
@@ -194,14 +251,25 @@ static void on_construct_A_clicked(GtkWidget *widget, gpointer data) {
         
         int count;
         if (!parse_array_numbers(input_text, numbers, &count)) {
-            THROW(&error_ctx, ERROR_INVALID_INPUT, "无效的输入格式");
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "无效的输入格式 - 请输入用空格或逗号分隔的数字");
         }
         
-        // 构造A序列
-        construct_A_sequence(numbers, count, result);
+        if (count < 1) {
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "请至少输入一个数字");
+        }
+        
+        // 计算A序列
+        int A_size;
+        construct_A_from_D(numbers, count, result, &A_size);
+        
+        // 检查结果的第一个数是否为0
+        if (A_size > 0 && result[0] != 0) {
+            // 如果第一个数不是0，说明这个D序列不是有效的差分序列
+            THROW(&error_ctx, ERROR_INVALID_INPUT, "无法构造有效的A序列：输入的D序列不是有效的差分序列（A序列必须从0开始）");
+        }
         
         // 显示结果
-        result_str = array_to_string(result, count);
+        result_str = array_to_string(result, A_size);
         if (!result_str) {
             THROW(&error_ctx, ERROR_MEMORY_ALLOCATION, "无法生成结果字符串");
         }
@@ -278,8 +346,16 @@ GtkWidget* create_sorting_page(void) {
     return page;
 }
 
+// 排序数组 - 使用快速排序
+void sort_array(int* arr, int size) {
+    if (!arr || size <= 0) return;
+    qsort(arr, size, sizeof(int), compare_ints);
+}
+
 // 将数组转换为字符串
 static char* array_to_string(const int arr[], int size) {
+    if (!arr || size <= 0) return NULL;
+    
     char* result = malloc(size * 12 + 1);  // 每个数字最多10位，加上逗号和空格
     if (!result) return NULL;
     
@@ -293,16 +369,4 @@ static char* array_to_string(const int arr[], int size) {
         }
     }
     return result;
-}
-
-// 构造D序列
-static void construct_D_sequence(const int* numbers, int count, int* result) {
-    int D_size;
-    construct_D_from_A(numbers, count, result, &D_size);
-}
-
-// 构造A序列
-static void construct_A_sequence(const int* numbers, int count, int* result) {
-    int A_size;
-    construct_A_from_D(numbers, count, result, &A_size);
 }

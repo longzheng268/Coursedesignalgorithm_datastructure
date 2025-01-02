@@ -16,25 +16,51 @@
 
 static GtkWidget *text_view_output;
 
+// 前向声明
+static void replace_chinese_punctuation(char* str);
+
 // 处理单个文件的内容
 void process_file(const char* content, GtkTextBuffer *output_buffer) {
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(output_buffer, &end);
     
     // 格式化处理
-    char* formatted = strdup(content);
+    char* formatted = g_strdup(content);
     if (formatted) {
         // 替换中文标点为英文标点
-        for (char* p = formatted; *p; p++) {
-            if (*p == '：') *p = ':';
-            if (*p == '（') *p = '(';
-            if (*p == '）') *p = ')';
-        }
+        replace_chinese_punctuation(formatted);
         gtk_text_buffer_insert(output_buffer, &end, formatted, -1);
-        free(formatted);
+        g_free(formatted);
     } else {
         gtk_text_buffer_insert(output_buffer, &end, content, -1);
     }
+}
+
+// 修改中文字符处理
+static void replace_chinese_punctuation(char* str) {
+    unsigned char* p = (unsigned char*)str;
+    while (*p) {
+        if (p[0] == 0xEF && p[1] == 0xBC) {
+            if (p[2] == 0x9A) {  // '：'
+                *str = ':';
+                p += 3;
+            } else if (p[2] == 0x88) {  // '（'
+                *str = '(';
+                p += 3;
+            } else if (p[2] == 0x89) {  // '）'
+                *str = ')';
+                p += 3;
+            } else {
+                *str = *p;
+                p++;
+            }
+        } else {
+            *str = *p;
+            p++;
+        }
+        str++;
+    }
+    *str = '\0';
 }
 
 // 递归处理include指令
@@ -115,15 +141,15 @@ void replace_includes(const char* filename, GtkTextBuffer *output_buffer, int de
                 }
                 snprintf(full_path, PATH_MAX, "%s/%s", dirname, included_file);
                 g_free(dirname);
-                
+                // 输出包含文件的开始标记
                 gtk_text_buffer_get_end_iter(output_buffer, &end);
                 gtk_text_buffer_insert(output_buffer, &end, 
                     "\n// ----- Begin included file: ", -1);
                 gtk_text_buffer_insert(output_buffer, &end, included_file, -1);
                 gtk_text_buffer_insert(output_buffer, &end, " -----\n\n", -1);
-                
+                // 递归处理包含文件
                 replace_includes(full_path, output_buffer, depth + 1);
-                
+                // 输出包含文件的结束标记
                 gtk_text_buffer_get_end_iter(output_buffer, &end);
                 gtk_text_buffer_insert(output_buffer, &end, 
                     "\n// ----- End included file: ", -1);
