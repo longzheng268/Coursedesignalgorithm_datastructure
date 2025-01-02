@@ -11,6 +11,8 @@
 #include "utils/error_handler.h"
 
 #define BACKGROUND_CHANGE_INTERVAL 300000
+#define DEFAULT_WINDOW_WIDTH 1366
+#define DEFAULT_WINDOW_HEIGHT 768
 
 typedef struct {
     GtkWidget *window;
@@ -173,7 +175,7 @@ static gboolean on_window_resize(GtkWidget *widget,
     
     // 根据窗口宽度调整字体大小
     if (width != last_width) {
-        app_ctx.font_scale_factor = (double)width / 1920.0;  // 以1920像素为基准
+        app_ctx.font_scale_factor = (double)width / 1920.0;
         gtk_range_set_value(GTK_RANGE(app_ctx.font_scale), app_ctx.font_scale_factor);
         update_font_size();
         last_width = width;
@@ -182,7 +184,7 @@ static gboolean on_window_resize(GtkWidget *widget,
     if (resize_timer > 0) {
         g_source_remove(resize_timer);
     }
-    resize_timer = g_timeout_add(150, update_background, NULL);
+    resize_timer = g_timeout_add(500, (GSourceFunc)update_background, NULL);
     
     return FALSE;
 }
@@ -227,6 +229,18 @@ static void load_backgrounds(void) {
     closedir(dir);
 }
 
+// 窗口大小变化的回调函数
+static void on_window_size_changed(GtkWidget *widget, 
+                                 GtkAllocation *allocation, 
+                                 gpointer user_data) {
+    // 获取新的窗口尺寸
+    int width, height;
+    gtk_window_get_size(GTK_WINDOW(widget), &width, &height);
+    
+    // 更新UI元素大小或进行其他必要的调整
+    // ... 根据需要添加代码 ...
+}
+
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
     srand(time(NULL));
@@ -237,17 +251,22 @@ int main(int argc, char *argv[]) {
 
     // 创建主窗口
     app_ctx.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(app_ctx.window), "算法与数据结构课程设计");
-
-    // 设置窗口默认大小
-    GdkDisplay *display = gdk_display_get_default();
-    GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-    GdkRectangle workarea = {0};
-    gdk_monitor_get_workarea(monitor, &workarea);
+    gtk_window_set_title(GTK_WINDOW(app_ctx.window), "算法与数据结构课程设计展示系统 by 210052202019 龙正");
     
-    int width = (workarea.width * 80) / 100;
-    int height = (workarea.height * 80) / 100;
-    gtk_window_set_default_size(GTK_WINDOW(app_ctx.window), width, height);
+    // 设置默认窗口大小
+    gtk_window_set_default_size(GTK_WINDOW(app_ctx.window), 
+                               DEFAULT_WINDOW_WIDTH, 
+                               DEFAULT_WINDOW_HEIGHT);
+    
+    // 允许调整窗口大小
+    gtk_window_set_resizable(GTK_WINDOW(app_ctx.window), TRUE);
+    
+    // 设置窗口最小尺寸（可选）
+    gtk_widget_set_size_request(app_ctx.window, 800, 600);
+    
+    // 添加窗口大小变化的回调（如果需要响应窗口大小变化）
+    g_signal_connect(G_OBJECT(app_ctx.window), "size-allocate",
+                    G_CALLBACK(on_window_size_changed), NULL);
 
     // 创建叠加容器
     GtkWidget *overlay = gtk_overlay_new();
@@ -315,7 +334,7 @@ int main(int argc, char *argv[]) {
     g_signal_connect(app_ctx.window, "configure-event", G_CALLBACK(on_window_resize), NULL);
 
     // 设置背景更新定时器
-    g_timeout_add(100, update_background, NULL);
+    g_timeout_add(BACKGROUND_CHANGE_INTERVAL, update_background, NULL);
 
     // 初始化字体相关变量
     app_ctx.base_font_size = 14;  // 基础字体大小

@@ -22,7 +22,6 @@ typedef enum {
 typedef struct {
     ErrorCode code;
     char message[256];
-    char details[1024];
     jmp_buf jump_buffer;
     gboolean has_error;
 } ErrorContext;
@@ -33,16 +32,14 @@ typedef struct {
 #define THROW(ctx, error_code, msg) do { \
     (ctx)->code = (error_code); \
     strncpy((ctx)->message, (msg), sizeof((ctx)->message) - 1); \
+    (ctx)->message[sizeof((ctx)->message) - 1] = '\0'; \
     (ctx)->has_error = TRUE; \
     longjmp((ctx)->jump_buffer, 1); \
 } while(0)
 #define FINALLY(code) code
 
-// 错误处理函数
+// 错误处理函数声明
 void init_error_context(ErrorContext *ctx);
-void clear_error_context(ErrorContext *ctx);
-void show_error_dialog(GtkWidget *parent, const char *title, const char *message);
-void show_error_message(GtkWidget *text_view, const char *message);
 void handle_error(GtkWidget *parent, ErrorCode code, const char *message);
 const char* get_error_string(ErrorCode code);
 void log_error(ErrorCode code, const char *message);

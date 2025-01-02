@@ -6,20 +6,8 @@
 void init_error_context(ErrorContext *ctx) {
     ctx->code = ERROR_NONE;
     ctx->message[0] = '\0';
-    ctx->details[0] = '\0';
     ctx->has_error = FALSE;
 }
-
-// 清理错误上下文
-void clear_error_context(ErrorContext *ctx) {
-    init_error_context(ctx);
-}
-
-// 添加全局错误处理器
-static void global_error_handler(const gchar *log_domain,
-                               GLogLevelFlags log_level,
-                               const gchar *message,
-                               gpointer user_data) __attribute__((unused));
 
 // 获取错误代码对应的描述
 const char* get_error_string(ErrorCode code) {
@@ -44,7 +32,7 @@ const char* get_error_string(ErrorCode code) {
 }
 
 // 显示错误对话框
-void show_error_dialog(GtkWidget *parent, const char *title, const char *message) {
+static void show_error_dialog(GtkWidget *parent, const char *title, const char *message) {
     GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(parent),
                                              GTK_DIALOG_MODAL,
                                              GTK_MESSAGE_ERROR,
@@ -53,12 +41,6 @@ void show_error_dialog(GtkWidget *parent, const char *title, const char *message
     gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog), "%s", message);
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
-}
-
-// 在本地视图中显示错误信息
-void show_error_message(GtkWidget *text_view, const char *message) {
-    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-    gtk_text_buffer_set_text(buffer, message, -1);
 }
 
 // 记录错误到日志文件
