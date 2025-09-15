@@ -8,12 +8,13 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/huffman/huffman.c" "CMakeFiles/algorithm_course_design.dir/src/huffman/huffman.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/huffman/huffman.c.o.d"
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/main.c" "CMakeFiles/algorithm_course_design.dir/src/main.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/main.c.o.d"
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/recursion/recursion.c" "CMakeFiles/algorithm_course_design.dir/src/recursion/recursion.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/recursion/recursion.c.o.d"
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/sorting/sorting.c" "CMakeFiles/algorithm_course_design.dir/src/sorting/sorting.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/sorting/sorting.c.o.d"
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/union/union.c" "CMakeFiles/algorithm_course_design.dir/src/union/union.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/union/union.c.o.d"
-  "/media/LongZheng/Data_2/Code_Project/Coursedesignalgorithm_datastructure/src/utils/error_handler.c" "CMakeFiles/algorithm_course_design.dir/src/utils/error_handler.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/utils/error_handler.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/huffman/huffman.c" "CMakeFiles/algorithm_course_design.dir/src/huffman/huffman.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/huffman/huffman.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/main.c" "CMakeFiles/algorithm_course_design.dir/src/main.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/main.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/recursion/recursion.c" "CMakeFiles/algorithm_course_design.dir/src/recursion/recursion.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/recursion/recursion.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/sorting/sorting.c" "CMakeFiles/algorithm_course_design.dir/src/sorting/sorting.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/sorting/sorting.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/union/union.c" "CMakeFiles/algorithm_course_design.dir/src/union/union.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/union/union.c.o.d"
+  "/home/runner/work/Coursedesignalgorithm_datastructure/Coursedesignalgorithm_datastructure/src/utils/error_handler.c" "CMakeFiles/algorithm_course_design.dir/src/utils/error_handler.c.o" "gcc" "CMakeFiles/algorithm_course_design.dir/src/utils/error_handler.c.o.d"
+  "" "algorithm_course_design" "gcc" "CMakeFiles/algorithm_course_design.dir/link.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
